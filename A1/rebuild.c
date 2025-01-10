@@ -99,7 +99,7 @@ int main(int argc, const char* argv[]){
             // Execute rebuild with the dependency foodule
             char num[10];
             sprintf(num,"%d",v[i]);
-            execlp("./rebuild","./rebuild",num,"NOROOT",NULL);
+            execlp(argv[0],argv[0],num,"NOROOT",NULL);
         }
     }
     markVisited(u,n);
