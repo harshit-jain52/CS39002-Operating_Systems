@@ -97,8 +97,11 @@ int main(int argc, const char* argv[]){
     int curr=-1;
     while(ct>1){
         curr = next(curr);
+        caught=-1;
         kill(childPID[curr],SIGUSR2);
-        pause();
+
+        if(caught==-1) pause(); // The process pauses to receive signal and doesn't if signal is already received
+        
         if(caught==0){
             fflush(stdout);
             isPlaying[curr]=false;
