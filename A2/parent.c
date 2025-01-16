@@ -17,6 +17,7 @@ pid_t* childPID = NULL;
 int n;
 volatile sig_atomic_t caught;
 
+// Signal handler
 void sigHandler (int sig){
     switch(sig){
         case SIGUSR1:
@@ -28,11 +29,14 @@ void sigHandler (int sig){
     }
 }
 
+// Helper function
 int next(int i){
     int j = (i+1)%n;
     for(;!isPlaying[j];j=(j+1)%n);
     return j;
 }
+
+/* Printing functions */
 
 void printNums(){
     printf("\n\t");
@@ -46,6 +50,7 @@ void printLine(){
     printf("+");
     fflush(stdout);
 }
+
 int main(int argc, const char* argv[]){
     if(argc<2){
         printf("Usage: %s [n]\n",argv[0]);
@@ -60,6 +65,7 @@ int main(int argc, const char* argv[]){
     fprintf(fp,"%d\n",n);
     fflush(fp);
 
+    // Create child processes
     for(int i=0;i<n;i++){
         isPlaying[i]=true;
         childPID[i] = fork();
@@ -83,6 +89,7 @@ int main(int argc, const char* argv[]){
 
     printNums();
     printLine();
+
     signal(SIGUSR1,sigHandler);
     signal(SIGUSR2,sigHandler);
 
@@ -93,7 +100,6 @@ int main(int argc, const char* argv[]){
         kill(childPID[curr],SIGUSR2);
         pause();
         if(caught==0){
-            // printf("%d\n",curr);
             fflush(stdout);
             isPlaying[curr]=false;
             ct--;
@@ -104,10 +110,13 @@ int main(int argc, const char* argv[]){
             fprintf(dfp,"%d",dpid);
             fflush(dfp);
             fclose(dfp);
+            
             printf("\n|\t");
             fflush(stdout);
+
             kill(childPID[0],SIGUSR1);
             waitpid(dpid,NULL,0);
+            
             printf(" |");
             printLine();
         }

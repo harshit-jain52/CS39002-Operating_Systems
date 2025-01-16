@@ -17,6 +17,8 @@ enum Status{
 pid_t nextpid=-1;
 int ch;
 
+/* Signal Handlers */
+
 void attemptCatch(int){
     int num = rand()%10;
     pid_t ppid = getppid();
@@ -88,8 +90,6 @@ int main(int argc, const char* argv[]){
         if(j==ch%n+1) break;
     }
     if(ch==n) nextpid=-1;
-
-    // printf("%d %d %d\n",ch, getpid(),nextpid);
     fclose(fp);
 
     signal(SIGUSR1,printStatus);
