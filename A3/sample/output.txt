@@ -1,0 +1,83 @@
+gcc -Wall -o schedule schedule.c
+./schedule
+**** FCFS Scheduling ****
+739       : Process      2 exits. Turnaround time =  648 (100%), Wait time = 0
+783       : Process      1 exits. Turnaround time =  783 (100%), Wait time = 0
+1752      : Process      3 exits. Turnaround time = 1259 (123%), Wait time = 232
+2363      : Process      4 exits. Turnaround time = 1567 (160%), Wait time = 586
+2588      : Process      5 exits. Turnaround time = 1610 (100%), Wait time = 8
+2598      : Process      7 exits. Turnaround time = 1251 (196%), Wait time = 612
+2760      : Process      9 exits. Turnaround time =  986 (156%), Wait time = 353
+2771      : Process      8 exits. Turnaround time = 1088 (173%), Wait time = 458
+2994      : Process      6 exits. Turnaround time = 1878 (154%), Wait time = 660
+3194      : Process     10 exits. Turnaround time = 1022 (119%), Wait time = 161
+3304      : Process     13 exits. Turnaround time =  420 (101%), Wait time = 6
+3464      : Process     11 exits. Turnaround time = 1215 (119%), Wait time = 197
+3750      : Process     12 exits. Turnaround time = 1076 (102%), Wait time = 22
+4097      : Process     14 exits. Turnaround time = 1099 (101%), Wait time = 13
+4134      : Process     15 exits. Turnaround time =  912 (101%), Wait time = 10
+4329      : Process     17 exits. Turnaround time =  605 (102%), Wait time = 12
+4629      : Process     16 exits. Turnaround time = 1042 (128%), Wait time = 227
+5091      : Process     18 exits. Turnaround time = 1330 (126%), Wait time = 276
+5248      : Process     19 exits. Turnaround time = 1290 (140%), Wait time = 370
+6308      : Process     20 exits. Turnaround time = 1973 (100%), Wait time = 0
+
+Average wait time = 210.15
+Total turnaround time = 6308
+CPU idle time = 2752
+CPU utilization = 56.37%
+
+**** RR Scheduling with q = 10 ****
+739       : Process      2 exits. Turnaround time =  648 (100%), Wait time = 0
+783       : Process      1 exits. Turnaround time =  783 (100%), Wait time = 0
+1548      : Process      3 exits. Turnaround time = 1055 (103%), Wait time = 28
+1838      : Process      4 exits. Turnaround time = 1042 (106%), Wait time = 61
+2040      : Process      7 exits. Turnaround time =  693 (108%), Wait time = 54
+2336      : Process      8 exits. Turnaround time =  653 (104%), Wait time = 23
+2426      : Process      6 exits. Turnaround time = 1310 (108%), Wait time = 92
+2461      : Process      9 exits. Turnaround time =  687 (109%), Wait time = 54
+2918      : Process      5 exits. Turnaround time = 1940 (121%), Wait time = 338
+3077      : Process     10 exits. Turnaround time =  905 (105%), Wait time = 44
+3317      : Process     13 exits. Turnaround time =  433 (105%), Wait time = 19
+3336      : Process     11 exits. Turnaround time = 1087 (107%), Wait time = 69
+3765      : Process     12 exits. Turnaround time = 1091 (104%), Wait time = 37
+4132      : Process     14 exits. Turnaround time = 1134 (104%), Wait time = 48
+4146      : Process     15 exits. Turnaround time =  924 (102%), Wait time = 22
+4358      : Process     17 exits. Turnaround time =  634 (107%), Wait time = 41
+4441      : Process     16 exits. Turnaround time =  854 (105%), Wait time = 39
+4879      : Process     18 exits. Turnaround time = 1118 (106%), Wait time = 64
+4906      : Process     19 exits. Turnaround time =  948 (103%), Wait time = 28
+6383      : Process     20 exits. Turnaround time = 2048 (104%), Wait time = 75
+
+Average wait time = 56.80
+Total turnaround time = 6383
+CPU idle time = 2827
+CPU utilization = 55.71%
+
+**** RR Scheduling with q = 5 ****
+739       : Process      2 exits. Turnaround time =  648 (100%), Wait time = 0
+783       : Process      1 exits. Turnaround time =  783 (100%), Wait time = 0
+1543      : Process      3 exits. Turnaround time = 1050 (102%), Wait time = 23
+1828      : Process      4 exits. Turnaround time = 1032 (105%), Wait time = 51
+2037      : Process      7 exits. Turnaround time =  690 (108%), Wait time = 51
+2334      : Process      8 exits. Turnaround time =  651 (103%), Wait time = 21
+2419      : Process      6 exits. Turnaround time = 1303 (107%), Wait time = 85
+2444      : Process      9 exits. Turnaround time =  670 (106%), Wait time = 37
+2916      : Process      5 exits. Turnaround time = 1938 (121%), Wait time = 336
+3065      : Process     10 exits. Turnaround time =  893 (104%), Wait time = 32
+3307      : Process     13 exits. Turnaround time =  423 (102%), Wait time = 9
+3314      : Process     11 exits. Turnaround time = 1065 (105%), Wait time = 47
+3780      : Process     12 exits. Turnaround time = 1106 (105%), Wait time = 52
+4092      : Process     14 exits. Turnaround time = 1094 (101%), Wait time = 8
+4143      : Process     15 exits. Turnaround time =  921 (102%), Wait time = 19
+4331      : Process     17 exits. Turnaround time =  607 (102%), Wait time = 14
+4429      : Process     16 exits. Turnaround time =  842 (103%), Wait time = 27
+4866      : Process     18 exits. Turnaround time = 1105 (105%), Wait time = 51
+4908      : Process     19 exits. Turnaround time =  950 (103%), Wait time = 30
+6380      : Process     20 exits. Turnaround time = 2045 (104%), Wait time = 72
+
+Average wait time = 48.25
+Total turnaround time = 6380
+CPU idle time = 2824
+CPU utilization = 55.74%
+
