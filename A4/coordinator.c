@@ -121,7 +121,7 @@ int main(){
             sprintf(rn2fdout, "%d", pfd[rneigh[i][1]][1]);
             sprintf(cn1fdout, "%d", pfd[cneigh[i][0]][1]);
             sprintf(cn2fdout, "%d", pfd[cneigh[i][1]][1]);
-            int geom_x = 900 + (i%3)*250, geom_y = 100 + (i/3)*300;
+            int geom_x = 800 + (i%3)*250, geom_y = 100 + (i/3)*300;
             sprintf(geometry,"17x8+%d+%d",geom_x,geom_y);
             execlp("xterm", "xterm", "-T", title, "-fa", "Monospace", "-fs", "15", "-geometry", geometry, "-bg", "#222442",
             "-e", "./block", blockno, bfdin, bfdout, rn1fdout, rn2fdout, cn1fdout, cn2fdout, NULL);
