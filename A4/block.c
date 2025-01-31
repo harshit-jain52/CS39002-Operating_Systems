@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <stdbool.h>
 
+/* Utility functions */
+
 void print_puzzle(int B[3][3]){
     for(int i=0;i<3;i++){
         printf(" +---+---+---+\n");
@@ -16,22 +18,22 @@ void print_puzzle(int B[3][3]){
     printf(" +---+---+---+\n");
 }
 
-void new_game(int A[3][3], int B[3][3]){
-    for(int i=0;i<3;i++){
-        for(int j=0;j<3;j++){
-            scanf("%d",&A[i][j]);
-            B[i][j] = A[i][j];
-        }
-    }
+void print_msg(const char* msg){
+    printf("%s",msg);
+    fflush(NULL);
+    sleep(2);
 }
 
-void display_solution(int B[3][3]){
-    for(int i=0;i<3;i++){
-        for(int j=0;j<3;j++){
-            scanf("%d",&B[i][j]);
-        }
-    }
+void send_msg(int fd, char* msg){
+    int stdout_fd = dup(1);
+    close(1);
+    dup(fd);
+    printf("%s\n",msg);
+    close(1);
+    dup(stdout_fd);
 }
+
+/* Validity Check functions */
 
 bool read_only_check(int c, int A[3][3]){
     int row=c/3, col=c%3;
@@ -45,15 +47,6 @@ bool block_check(int d, int B[3][3]){
         }
     }
     return true;
-}
-
-void send_msg(int fd, char* msg){
-    int stdout_fd = dup(1);
-    close(1);
-    dup(fd);
-    printf("%s\n",msg);
-    close(1);
-    dup(stdout_fd);
 }
 
 bool row_check(int i, int d, int rn1fdout, int rn2fdout, int bfdout){
@@ -80,12 +73,17 @@ bool col_check(int j, int d, int cn1fdout, int cn2fdout, int bfdout){
     return (res==0);
 }
 
-void print_msg(const char* msg){
-    printf("%s",msg);
-    fflush(NULL);
-    sleep(2);
+/* Handle 'n' */
+void new_game(int A[3][3], int B[3][3]){
+    for(int i=0;i<3;i++){
+        for(int j=0;j<3;j++){
+            scanf("%d",&A[i][j]);
+            B[i][j] = A[i][j];
+        }
+    }
 }
 
+/* Handle 'p' */
 void put_digit(int A[3][3], int B[3][3], int rn1fdout, int rn2fdout, int cn1fdout, int cn2fdout, int bfdout){
     int c,d;
     scanf("%d %d", &c, &d);
@@ -108,6 +106,7 @@ void put_digit(int A[3][3], int B[3][3], int rn1fdout, int rn2fdout, int cn1fdou
     B[c/3][c%3] = d;
 }
 
+/* Handle 'r' */
 void row_req(int B[3][3]){
     int i,d,bfd;
     bool flag = false;
@@ -120,6 +119,7 @@ void row_req(int B[3][3]){
     send_msg(bfd,msg);
 }
 
+/* Handle 'c' */
 void col_req(int B[3][3]){
     int j,d,bfd;
     bool flag = false;
@@ -130,6 +130,12 @@ void col_req(int B[3][3]){
     char msg[5];
     sprintf(msg,"%d",flag);
     send_msg(bfd,msg);
+}
+
+/* Handle 'q' */
+void quit(){
+    print_msg("Bye...");
+    exit(0);
 }
 
 int main(int argc, const char *argv[]){
@@ -153,9 +159,6 @@ int main(int argc, const char *argv[]){
             case 'n':
                 new_game(A,B);
                 break;
-            case 's':
-                display_solution(B);
-                break;
             case 'p':
                 put_digit(A,B,rn1fdout,rn2fdout,cn1fdout,cn2fdout,bfdout);
                 break;
@@ -166,8 +169,8 @@ int main(int argc, const char *argv[]){
                 col_req(B);
                 break;
             case 'q':
-                print_msg("Bye...");
-                exit(0);
+                quit();
+                break;
         }
         print_puzzle(B);
     }

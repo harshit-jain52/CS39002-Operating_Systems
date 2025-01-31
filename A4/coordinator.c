@@ -6,8 +6,20 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <time.h>
+#include <stdbool.h>
 #include "boardgen.c"
 
+/* Utility function to write message to pipe */
+void send_msg(int fd, char* msg){
+    int stdout_fd = dup(1);
+    close(1);
+    dup(fd);
+    printf("%s\n",msg);
+    close(1);
+    dup(stdout_fd);
+}
+
+/* Handle 'h' */
 void display_help(){
     printf("\nCommands supported\n");
     printf("\tn\t\tStart new game\n");
@@ -23,15 +35,8 @@ void display_help(){
     printf("\t+---+---+---+\n");
 }
 
-void send_msg(int fd, char* msg){
-    int stdout_fd = dup(1);
-    close(1);
-    dup(fd);
-    printf("%s\n",msg);
-    close(1);
-    dup(stdout_fd);
-}
 
+/* Handle 'n' */
 void new_game(int A[9][9], int S[9][9], int pfd[9][2]){
     newboard(A,S);
     for(int i=0;i<9;i++){
@@ -45,11 +50,12 @@ void new_game(int A[9][9], int S[9][9], int pfd[9][2]){
     }
 }
 
+/* Handle 's' */
 void display_solution(int S[9][9], int pfd[9][2]){
     for(int i=0;i<9;i++){
         int r=(i/3)*3, c=(i%3)*3;
         char msg[50];
-        sprintf(msg,"s %d %d %d %d %d %d %d %d %d",
+        sprintf(msg,"n %d %d %d %d %d %d %d %d %d",
         S[r][c], S[r][c+1], S[r][c+2],
         S[r+1][c], S[r+1][c+1], S[r+1][c+2],
         S[r+2][c], S[r+2][c+1], S[r+2][c+2]);
@@ -57,25 +63,40 @@ void display_solution(int S[9][9], int pfd[9][2]){
     }
 }
 
+/* Handle 'p' */
 void put_digit(int pfd[9][2]){
     int b,c,d;
     scanf("%d %d %d", &b, &c, &d);
+    if(b<0 || b>8 || c<0 || c>8 || d<1 || d>9){
+        printf("Input out of permissible range. Enter 'h' for help.\n");
+        return;
+    }
     char msg[20];
     sprintf(msg,"p %d %d",c,d);
     send_msg(pfd[b][1],msg);
 }
 
-void handle_quit(int pfd[9][2]){
+/* Handle 'q' */
+void quit(int pfd[9][2]){
     for(int i=0;i<9;i++) send_msg(pfd[i][1],"q");
     for(int i=0;i<9;i++) wait(NULL);
     exit(0);
+}
+
+/* Handle users */
+void invalid_input(){
+    printf("Invalid input. Enter 'h' for help.\n");
+}
+
+void game_not_started(){
+    printf("Start a new game first by entering 'n'\n");
 }
 
 int main(){
     int A[9][9], S[9][9], pfd[9][2];
     int rneigh[9][2] = {{1, 2}, {0, 2}, {0, 1}, {4, 5}, {3, 5}, {3, 4}, {7, 8}, {6, 8}, {6, 7}};
     int cneigh[9][2] = {{3, 6}, {4, 7}, {5, 8}, {0, 6}, {1, 7}, {2, 8}, {0, 3}, {1, 4}, {2, 5}};
-
+    bool game_started = false;
     display_help();
 
     for(int i=0;i<9;i++){
@@ -102,7 +123,7 @@ int main(){
             sprintf(cn2fdout, "%d", pfd[cneigh[i][1]][1]);
             int geom_x = 900 + (i%3)*250, geom_y = 100 + (i/3)*300;
             sprintf(geometry,"17x8+%d+%d",geom_x,geom_y);
-            execlp("xterm", "xterm", "-T", title, "-fa", "Monospace", "-fs", "15", "-geometry", geometry, "-bg", "#331100",
+            execlp("xterm", "xterm", "-T", title, "-fa", "Monospace", "-fs", "15", "-geometry", geometry, "-bg", "#222442",
             "-e", "./block", blockno, bfdin, bfdout, rn1fdout, rn2fdout, cn1fdout, cn2fdout, NULL);
         }
     }
@@ -115,19 +136,24 @@ int main(){
         switch(cmd){
             case 'n':
                 new_game(A,S,pfd);
+                game_started = true;
                 break;
             case 'h':
                 display_help();
                 break;
             case 's':
-                display_solution(S,pfd);
+                if(!game_started) game_not_started();
+                else display_solution(S,pfd);
                 break;
             case 'p':
-                put_digit(pfd);
+                if(!game_started) game_not_started();
+                else put_digit(pfd);
                 break;
             case 'q':
-                handle_quit(pfd);
+                quit(pfd);
                 break;
+            default:
+                invalid_input();
         }
     }
 }
