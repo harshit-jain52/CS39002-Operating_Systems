@@ -51,6 +51,7 @@ void cmain(int id, int count){
         SM[waiter_b+1] = count;
         SM[waiter_fr+3] = (waiter_b+2); // Enqueue the request
         SM[waiter_fr+1]++;
+        int start_waiting = SM[0];
         up(mutex_id, 0);
 
         // Signal the waiter to take the order.
@@ -62,7 +63,6 @@ void cmain(int id, int count){
         // PLACE ORDER
         down(mutex_id, 0);
         log_message(SM[0], "Customer %d: Order placed to Waiter %d", id, waiter);
-        int start_waiting = SM[0];
         up(mutex_id, 0);
 
         // Wait for food to be served 
