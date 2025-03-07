@@ -1,4 +1,4 @@
-#include "barfoobar.h"
+#include <barfoobar.h>
 int mutex_id, cook_id, waiter_id, customer_id;
 int shmid;
 
@@ -42,6 +42,12 @@ void wmain(char waiter){
             SM[fr] = 0;
             log_message(SM[0], "Waiter %c: Serving food to Customer %d", waiter, cust_id);
             up(customer_id, cust_id);
+
+            if(SM[0] > CLOSING_TIME && SM[fr+2]==SM[fr+3]){
+                log_message(SM[0], "Waiter %c leaving (no more customers to serve)", waiter);
+                up(mutex_id, 0);
+                break;
+            }
         }
         else if(SM[po] > 0){
             // Take the order
@@ -68,6 +74,11 @@ void wmain(char waiter){
             SM[cook_b+2] = cust_ct;
             SM[25] = (cook_b+3); // Enqueue the request
             up(cook_id, 0);
+        }
+        else{
+            log_message(SM[0], "Waiter %c leaving (no more customers to serve)", waiter);
+            up(mutex_id, 0);
+            break;
         }
         up(mutex_id, 0);
     }

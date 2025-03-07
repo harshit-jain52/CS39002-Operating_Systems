@@ -1,4 +1,4 @@
-#include "barfoobar.h"
+#include <barfoobar.h>
 int mutex_id, cook_id, waiter_id, customer_id;
 int shmid;
 const char* customer_file = "customers.txt";
@@ -32,7 +32,7 @@ void get_shm(){
 void cmain(int id, int count){
     for(;;){
         down(mutex_id, 0);
-        if(SM[0] > MAX_TIME){
+        if(SM[0] > CLOSING_TIME){
             log_message(SM[0], "Customer %d leaves (late arrival)", id);
             up(mutex_id, 0);
             break;
@@ -107,6 +107,8 @@ int main(){
     fclose(fp);
     get_sem();
     get_shm();
+    signal(SIGINT, cleanup);
+    signal(SIGSEGV, cleanup);
 
     SM = (int*)shmat(shmid, 0, 0);
     int time = 0;
@@ -128,4 +130,5 @@ int main(){
     }
 
     for(int i=0; i<idx; i++) wait(NULL);
+    cleanup(0);
 }

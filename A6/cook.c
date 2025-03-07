@@ -1,4 +1,4 @@
-#include "barfoobar.h"
+#include <barfoobar.h>
 int mutex_id, cook_id, waiter_id, customer_id;
 int shmid;
 
@@ -76,7 +76,7 @@ void init_shm(){
     SM[24] = 1000; // F for Cooking Queue
     SM[25] = 1000; // B for Cooking Queue
     
-    SM[26] = 2; // no. of cooks available
+    SM[26] = COOKS; // no. of cooks available
 
     // For waiter U
     for(int i=100; i<=299; i++) SM[i] = 0;
@@ -112,6 +112,21 @@ void cmain(char cook){
         // Wait until woken up by a waiter submitting a cooking request
         down(cook_id, 0);
 
+        // Check for End of Session
+        bool leave = false;
+        down(mutex_id, 0);
+        if(SM[26]!=COOKS){
+            log_message(SM[0], "Cook %c: Leaving", cook);
+            leave = true;
+            SM[26]--;
+            if(SM[26] == 0){
+                for(int i=0; i<WAITERS; i++) up(waiter_id, i);
+            }
+        }
+        
+        up(mutex_id, 0);
+        if(leave) break;
+
         // Read a cooking request
         down(mutex_id, 0);
         int top = SM[24];
@@ -137,6 +152,23 @@ void cmain(char cook){
         else SM[0] = curr_time;
         up(waiter_id, waiter_num);
         up(mutex_id, 0);
+
+        // Check for End of Session
+        leave = false;
+        down(mutex_id, 0);
+        if(SM[0]>CLOSING_TIME && SM[24]==SM[25]){
+            log_message(SM[0], "Cook %c: Leaving", cook);
+            leave = true;
+            SM[26]--;
+            if(SM[26] == 0){
+                for(int i=0; i<WAITERS; i++) up(waiter_id, i);
+            }
+            else{
+                for(int i=0; i<COOKS-1; i++) up(cook_id, 0);
+            }
+        }
+        up(mutex_id, 0);
+        if(leave) break;
     }
 
     exit(0);
