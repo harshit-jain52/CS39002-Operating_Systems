@@ -26,9 +26,8 @@ void up(int semid, int i){
 void timestamp(int min){
     char meridian[2][3] = {"am", "pm"};
     int hr = START_TIME_12_HOUR + min/60;
-    hr = (hr > 12) ? hr-12 : hr;
     min %= 60;
-    printf("[%02d:%02d %s]: ", hr, min, meridian[(hr >= 12)]);
+    printf("[%02d:%02d %s]: ", (hr > 12) ? hr-12 : hr, min, meridian[(hr >= 12)]);
 }
 
 void log_message(int min, const char *format, ...) {
