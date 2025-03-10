@@ -58,7 +58,7 @@ void cmain(int id, int count){
         up(waiter_id, waiter);
 
         // Wait for the waiter to attend
-        down(customer_id, id);
+        down(customer_id, id-1);
 
         // PLACE ORDER
         down(mutex_id, 0);
@@ -66,7 +66,7 @@ void cmain(int id, int count){
         up(mutex_id, 0);
 
         // Wait for food to be served 
-        down(customer_id, id);
+        down(customer_id, id-1);
         down(mutex_id, 0);
         log_message(SM[0], "Customer %d gets food [Waiting Time = %d]", id, SM[0]-start_waiting);
         int curr_time = SM[0];

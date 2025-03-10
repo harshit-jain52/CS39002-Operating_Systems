@@ -41,7 +41,7 @@ void wmain(char waiter){
             int cust_id = SM[fr];
             SM[fr] = 0;
             log_message(SM[0], "Waiter %c: Serving food to Customer %d", waiter, cust_id);
-            up(customer_id, cust_id);
+            up(customer_id, cust_id-1);
 
             if(SM[0] > CLOSING_TIME && SM[fr+2]==SM[fr+3]){
                 log_message(SM[0], "Waiter %c leaving (no more customers to serve)", waiter);
@@ -61,7 +61,7 @@ void wmain(char waiter){
             int delay = 1;
             msleep(delay);
             curr_time += delay;
-            up(customer_id, cust_id);
+            up(customer_id, cust_id-1);
 
             // Place the order
             log_message(curr_time, "Waiter %c: Placing order for Customer %d (Count %d)", waiter, cust_id, cust_ct);
