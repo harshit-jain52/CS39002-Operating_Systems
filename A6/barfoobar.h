@@ -20,7 +20,6 @@
 
 #define MAX_CUSTOMERS 200
 #define WAITERS 5
-#define MAX_CUST_PER_WAITER (MAX_CUSTOMERS/WAITERS)
 #define COOKS 2
 #define TABLES 10
 #define CLOSING_TIME 240
@@ -28,12 +27,14 @@
 #define SHM_SIZE 2000
 #define msleep(x) usleep((x)*100000)
 
+// Semaphore functions
 void down(int semid, int i);
-
 void up(int semid, int i);
 
+// Logging functions
 void timestamp(int min);
+void print_spaces(int spaces);
+void log_message(int min, int spaces, const char *format, ...);
 
-void log_message(int min, const char *format, ...);
-
+// Cleanup signal handler
 void cleanup(int signo);

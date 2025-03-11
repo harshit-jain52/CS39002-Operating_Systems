@@ -30,8 +30,15 @@ void timestamp(int min){
     printf("[%02d:%02d %s]: ", (hr > 12) ? hr-12 : hr, min, meridian[(hr >= 12)]);
 }
 
-void log_message(int min, const char *format, ...) {
+void print_spaces(int spaces){
+    for (int i = 0; i < spaces; i++){
+        printf(" ");
+    }
+}
+
+void log_message(int min, int spaces, const char *format, ...) {
     timestamp(min);
+    print_spaces(spaces);
 
     va_list args;
     va_start(args, format);

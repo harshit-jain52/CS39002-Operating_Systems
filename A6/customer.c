@@ -33,12 +33,12 @@ void cmain(int id, int count){
     for(;;){
         down(mutex_id, 0);
         if(SM[0] > CLOSING_TIME){
-            log_message(SM[0], "Customer %d leaves (late arrival)", id);
+            log_message(SM[0], 4, "Customer %d leaves (late arrival)", id);
             up(mutex_id, 0);
             break;
         }
         if(SM[1] == 0){
-            log_message(SM[0], "Customer %d leaves (no empty tables)", id);
+            log_message(SM[0], 4, "Customer %d leaves (no empty tables)", id);
             up(mutex_id, 0);
             break;
         }
@@ -51,7 +51,7 @@ void cmain(int id, int count){
         SM[waiter_b+1] = count;
         SM[waiter_fr+3] = (waiter_b+2); // Enqueue the request
         SM[waiter_fr+1]++;
-        int start_waiting = SM[0];
+        int arrival_time = SM[0];
         up(mutex_id, 0);
 
         // Signal the waiter to take the order.
@@ -62,13 +62,13 @@ void cmain(int id, int count){
 
         // PLACE ORDER
         down(mutex_id, 0);
-        log_message(SM[0], "Customer %d: Order placed to Waiter %d", id, waiter);
+        log_message(SM[0], 1, "Customer %d: Order placed to Waiter %c", id, waiter+'U');
         up(mutex_id, 0);
 
         // Wait for food to be served 
         down(customer_id, id-1);
         down(mutex_id, 0);
-        log_message(SM[0], "Customer %d gets food [Waiting Time = %d]", id, SM[0]-start_waiting);
+        log_message(SM[0], 2, "Customer %d gets food [Waiting Time = %d]", id, SM[0]-arrival_time);
         int curr_time = SM[0];
         up(mutex_id, 0);
 
@@ -76,7 +76,7 @@ void cmain(int id, int count){
         int delay = 30;
         msleep(delay);
         curr_time += delay;
-        log_message(curr_time, "Customer %d finishes eating and leaves", id);
+        log_message(curr_time, 3, "Customer %d finishes eating and leaves", id);
         down(mutex_id, 0);
         if(SM[0] > curr_time) printf("!!!WARNING: Setting time by CUSTOMER %d failed\n", id);
         else SM[0] = curr_time;
@@ -117,7 +117,7 @@ int main(){
         msleep(customers[i].arrival_time - time);
         time = customers[i].arrival_time;
         down(mutex_id, 0);
-        log_message(time, "Customer %d arrives (count = %d)", customers[i].id, customers[i].count);
+        log_message(time, 0, "Customer %d arrives (count = %d)", customers[i].id, customers[i].count);
         if(SM[0] > time) printf("!!!WARNING: Setting time by CUSTOMER %d failed\n", customers[i].id);
         else SM[0] = time;
         up(mutex_id, 0);

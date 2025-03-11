@@ -77,6 +77,11 @@ void init_shm(){
     SM[25] = 1000; // B for Cooking Queue
     
     SM[26] = COOKS; // no. of cooks available
+    SM[30] = 0; // no. of unprepared orders for Waiter U
+    SM[31] = 0; // no. of unprepared orders for Waiter V
+    SM[32] = 0; // no. of unprepared orders for Waiter W
+    SM[33] = 0; // no. of unprepared orders for Waiter X
+    SM[34] = 0; // no. of unprepared orders for Waiter Y
 
     // For waiter U
     for(int i=100; i<=299; i++) SM[i] = 0;
@@ -107,7 +112,7 @@ void cmain(char cook){
         exit(1);
     }
 
-    log_message(0, "Cook %c is ready", cook);
+    log_message(0, cook-'C', "Cook %c is ready", cook);
     for(;;){
         // Wait until woken up by a waiter submitting a cooking request
         down(cook_id, 0);
@@ -116,7 +121,7 @@ void cmain(char cook){
         bool leave = false;
         down(mutex_id, 0);
         if(SM[26]!=COOKS){
-            log_message(SM[0], "Cook %c: Leaving", cook);
+            log_message(SM[0], cook-'C', "Cook %c: Leaving", cook);
             leave = true;
             SM[26]--;
             if(SM[26] == 0){
@@ -138,11 +143,11 @@ void cmain(char cook){
         up(mutex_id, 0);
 
         // Prepare the food
-        log_message(curr_time, "Cook %c: Preparing order (Waiter %c, Customer %d, Count %d)", cook, 'U'+waiter_num, cust_id, cust_ct);
+        log_message(curr_time, cook-'C', "Cook %c: Preparing order (Waiter %c, Customer %d, Count %d)", cook, 'U'+waiter_num, cust_id, cust_ct);
         int delay = 5*cust_ct;
         msleep(delay);
         curr_time += delay;
-        log_message(curr_time, "Cook %c: Prepared order (Waiter %c, Customer %d, Count %d)", cook, 'U'+waiter_num, cust_id, cust_ct);
+        log_message(curr_time, cook-'C', "Cook %c: Prepared order (Waiter %c, Customer %d, Count %d)", cook, 'U'+waiter_num, cust_id, cust_ct);
 
         // Notify the waiter that the food is ready
         down(mutex_id, 0);
@@ -157,7 +162,7 @@ void cmain(char cook){
         leave = false;
         down(mutex_id, 0);
         if(SM[0]>CLOSING_TIME && SM[24]==SM[25]){
-            log_message(SM[0], "Cook %c: Leaving", cook);
+            log_message(SM[0], cook-'C', "Cook %c: Leaving", cook);
             leave = true;
             SM[26]--;
             if(SM[26] == 0){

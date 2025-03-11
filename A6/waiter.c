@@ -28,7 +28,7 @@ void wmain(char waiter){
         exit(1);
     }
 
-    log_message(0, "Waiter %c is ready", waiter);
+    log_message(0, waiter-'U',"Waiter %c is ready", waiter);
     for(;;){
         // Wait until woken up by a cook or a new customer
         down(waiter_id, waiter-'U');
@@ -40,11 +40,11 @@ void wmain(char waiter){
             // Serve the food
             int cust_id = SM[fr];
             SM[fr] = 0;
-            log_message(SM[0], "Waiter %c: Serving food to Customer %d", waiter, cust_id);
+            log_message(SM[0], waiter-'U',"Waiter %c: Serving food to Customer %d", waiter, cust_id);
             up(customer_id, cust_id-1);
-
-            if(SM[0] > CLOSING_TIME && SM[fr+2]==SM[fr+3]){
-                log_message(SM[0], "Waiter %c leaving (no more customers to serve)", waiter);
+            SM[30+waiter-'U']++;
+            if(SM[0] > CLOSING_TIME && SM[fr+2]==SM[fr+3] && SM[30+waiter-'U']==0){
+                log_message(SM[0], waiter-'U',"Waiter %c leaving (no more customers to serve)", waiter);
                 up(mutex_id, 0);
                 break;
             }
@@ -64,7 +64,7 @@ void wmain(char waiter){
             up(customer_id, cust_id-1);
 
             // Place the order
-            log_message(curr_time, "Waiter %c: Placing order for Customer %d (Count %d)", waiter, cust_id, cust_ct);
+            log_message(curr_time, waiter-'U',"Waiter %c: Placing order for Customer %d (Count %d)", waiter, cust_id, cust_ct);
             down(mutex_id, 0);
             if(SM[0] > curr_time) printf("!!!WARNING: Setting time by WAITER %c failed\n", waiter);
             else SM[0] = curr_time;
@@ -73,10 +73,11 @@ void wmain(char waiter){
             SM[cook_b+1] = cust_id;
             SM[cook_b+2] = cust_ct;
             SM[25] = (cook_b+3); // Enqueue the request
+            SM[30+waiter-'U']++;
             up(cook_id, 0);
         }
         else{
-            log_message(SM[0], "Waiter %c leaving (no more customers to serve)", waiter);
+            log_message(SM[0], waiter-'U',"Waiter %c leaving (no more customers to serve)", waiter);
             up(mutex_id, 0);
             break;
         }
