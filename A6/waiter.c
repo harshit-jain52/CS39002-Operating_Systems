@@ -42,7 +42,7 @@ void wmain(char waiter){
             SM[fr] = 0;
             log_message(SM[0], waiter-'U',"Waiter %c: Serving food to Customer %d", waiter, cust_id);
             up(customer_id, cust_id-1);
-            SM[30+waiter-'U']++;
+            SM[30+waiter-'U']--;
             if(SM[0] > CLOSING_TIME && SM[fr+2]==SM[fr+3] && SM[30+waiter-'U']==0){
                 log_message(SM[0], waiter-'U',"Waiter %c leaving (no more customers to serve)", waiter);
                 up(mutex_id, 0);

@@ -29,7 +29,6 @@ run: all
 	gnome-terminal --title="Cook" --geometry=80x24+0+0 -- bash -c "./cook; exec bash"
 	sleep 1
 	gnome-terminal --title="Waiter" --geometry=80x24+850+0 -- bash -c "./waiter; exec bash"
-	sleep 1
 	gnome-terminal --title="Customer" --geometry=80x24+400+500 -- bash -c "./customer; exec bash"
 
 clean:

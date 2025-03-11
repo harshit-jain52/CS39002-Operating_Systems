@@ -73,8 +73,8 @@ void init_shm(){
     SM[22] = 900; // F for Waiter Y
     SM[23] = 900; // B for Waiter Y
     
-    SM[24] = 1000; // F for Cooking Queue
-    SM[25] = 1000; // B for Cooking Queue
+    SM[24] = 1100; // F for Cooking Queue
+    SM[25] = 1100; // B for Cooking Queue
     
     SM[26] = COOKS; // no. of cooks available
     SM[30] = 0; // no. of unprepared orders for Waiter U

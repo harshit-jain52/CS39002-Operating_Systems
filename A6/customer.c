@@ -30,61 +30,57 @@ void get_shm(){
 }
 
 void cmain(int id, int count){
-    for(;;){
-        down(mutex_id, 0);
-        if(SM[0] > CLOSING_TIME){
-            log_message(SM[0], 4, "Customer %d leaves (late arrival)", id);
-            up(mutex_id, 0);
-            break;
-        }
-        if(SM[1] == 0){
-            log_message(SM[0], 4, "Customer %d leaves (no empty tables)", id);
-            up(mutex_id, 0);
-            break;
-        }
-
-        SM[1]--;
-        int waiter = (id-1)%WAITERS;
-        int waiter_fr = 4*(waiter+1);
-        int waiter_b = SM[waiter_fr+3];
-        SM[waiter_b] = id;
-        SM[waiter_b+1] = count;
-        SM[waiter_fr+3] = (waiter_b+2); // Enqueue the request
-        SM[waiter_fr+1]++;
-        int arrival_time = SM[0];
+    down(mutex_id, 0);
+    if(SM[0] > CLOSING_TIME){
+        log_message(SM[0], 4, "Customer %d leaves (late arrival)", id);
         up(mutex_id, 0);
-
-        // Signal the waiter to take the order.
-        up(waiter_id, waiter);
-
-        // Wait for the waiter to attend
-        down(customer_id, id-1);
-
-        // PLACE ORDER
-        down(mutex_id, 0);
-        log_message(SM[0], 1, "Customer %d: Order placed to Waiter %c", id, waiter+'U');
-        up(mutex_id, 0);
-
-        // Wait for food to be served 
-        down(customer_id, id-1);
-        down(mutex_id, 0);
-        log_message(SM[0], 2, "Customer %d gets food [Waiting Time = %d]", id, SM[0]-arrival_time);
-        int curr_time = SM[0];
-        up(mutex_id, 0);
-
-        // Eat Food
-        int delay = 30;
-        msleep(delay);
-        curr_time += delay;
-        log_message(curr_time, 3, "Customer %d finishes eating and leaves", id);
-        down(mutex_id, 0);
-        if(SM[0] > curr_time) printf("!!!WARNING: Setting time by CUSTOMER %d failed\n", id);
-        else SM[0] = curr_time;
-        SM[1]++;
-        up(mutex_id, 0);
-        break;
+        exit(0);
     }
-    
+    if(SM[1] == 0){
+        log_message(SM[0], 4, "Customer %d leaves (no empty tables)", id);
+        up(mutex_id, 0);
+        exit(0);
+    }
+
+    SM[1]--;
+    int waiter = (id-1)%WAITERS;
+    int waiter_fr = 4*(waiter+1);
+    int waiter_b = SM[waiter_fr+3];
+    SM[waiter_b] = id;
+    SM[waiter_b+1] = count;
+    SM[waiter_fr+3] = (waiter_b+2); // Enqueue the request
+    SM[waiter_fr+1]++;
+    int arrival_time = SM[0];
+    up(mutex_id, 0);
+
+    // Signal the waiter to take the order.
+    up(waiter_id, waiter);
+
+    // Wait for the waiter to attend
+    down(customer_id, id-1);
+
+    // PLACE ORDER
+    down(mutex_id, 0);
+    log_message(SM[0], 1, "Customer %d: Order placed to Waiter %c", id, waiter+'U');
+    up(mutex_id, 0);
+
+    // Wait for food to be served 
+    down(customer_id, id-1);
+    down(mutex_id, 0);
+    log_message(SM[0], 2, "Customer %d gets food [Waiting Time = %d]", id, SM[0]-arrival_time);
+    int curr_time = SM[0];
+    up(mutex_id, 0);
+
+    // Eat Food
+    int delay = 30;
+    msleep(delay);
+    curr_time += delay;
+    log_message(curr_time, 3, "Customer %d finishes eating and leaves", id);
+    down(mutex_id, 0);
+    if(SM[0] > curr_time) printf("!!!WARNING: Setting time by CUSTOMER %d failed\n", id);
+    else SM[0] = curr_time;
+    SM[1]++;
+    up(mutex_id, 0);    
     exit(0);
 }
 
