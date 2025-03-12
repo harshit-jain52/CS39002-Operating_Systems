@@ -51,7 +51,6 @@ void *Boat(void *targ){
     printf("Boat\t%d\tReady\n",boat_id+1);
     BA[boat_id] = true;
     while(1){
-        V(&rider);
         P(&boat);
         
         pthread_mutex_lock(&bmtx);
@@ -60,6 +59,7 @@ void *Boat(void *targ){
         pthread_barrier_init(&BB[boat_id], NULL, 2);
         pthread_barrier_t* bar = &BB[boat_id];
         pthread_mutex_unlock(&bmtx);
+        V(&rider);
         
         pthread_barrier_wait(bar);
         
@@ -92,7 +92,6 @@ void *Visitor(void *targ){
 
     int boat_id = -1;
     pthread_barrier_t* bar;
-    search:
     for(int i = 0; i < m; i++){
         pthread_mutex_lock(&bmtx);
         if(BA[i] && BC[i] == -1){
@@ -104,10 +103,6 @@ void *Visitor(void *targ){
             break;
         }
         pthread_mutex_unlock(&bmtx);
-    }
-    if(boat_id == -1){
-        usleep(1000);
-        goto search;
     }
 
     printf("Visitor\t%d\tFinds boat %2d\n", vis_id+1, boat_id+1);
