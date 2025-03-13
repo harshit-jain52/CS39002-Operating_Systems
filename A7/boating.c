@@ -20,7 +20,7 @@ typedef struct {
 } semaphore;
 #define SEMAPHORE_INITIALIZER {0, PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER}
 
-int m, n;
+int m, n, vis_left;
 semaphore boat, rider;
 pthread_mutex_t bmtx;
 pthread_barrier_t EOS;
@@ -79,8 +79,8 @@ void *Boat(void *targ){
         printf("Boat\t%d\tEnd of ride for visiter %3d (ride time = %3ld)\n",boat_id+1,vis_id+1,rtime);
 
         pthread_mutex_lock(&bmtx);
-        n--;
-        if(n == 0){
+        vis_left--;
+        if(vis_left == 0){
             pthread_mutex_unlock(&bmtx);
             pthread_barrier_wait(&EOS);
             break;
@@ -144,6 +144,7 @@ int main(int argc, char* argv[]){
 
     srand(time(NULL));
 
+    vis_left = n;
     boat = (semaphore)SEMAPHORE_INITIALIZER;
     rider = (semaphore)SEMAPHORE_INITIALIZER;
     bmtx = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
