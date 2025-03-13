@@ -52,13 +52,15 @@ void V(semaphore *s){
 void *Boat(void *targ){
     int boat_id = *(int *)targ;
     printf("Boat\t%d\tReady\n",boat_id+1);
+    pthread_mutex_lock(&bmtx);
+    pthread_barrier_init(&BB[boat_id], NULL, 2);
+    pthread_mutex_unlock(&bmtx);
     while(1){
         P(&boat);
         
         pthread_mutex_lock(&bmtx);
         BA[boat_id] = true;
         BC[boat_id] = -1;
-        pthread_barrier_init(&BB[boat_id], NULL, 2);
         pthread_barrier_t* bar = &BB[boat_id];
         pthread_mutex_unlock(&bmtx);
 
