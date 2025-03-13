@@ -8,6 +8,8 @@
 
 #define MMAX 10
 #define NMAX 100
+#define MMIN 5
+#define NMIN 20
 #define msleep(x) usleep((x)*100000)
 
 typedef struct {
@@ -130,6 +132,12 @@ int main(int argc, char* argv[]){
     m = atoi(argv[1]); // No. of boats
     n = atoi(argv[2]); // No. of visitors
 
+    if(m < MMIN || m > MMAX || n < NMIN || n > NMAX){
+        printf("Range of m: %d-%d\n", MMIN, MMAX);
+        printf("Range of n: %d-%d\n", NMIN, NMAX);
+        return 1;
+    }
+
     boat = (semaphore)SEMAPHORE_INITIALIZER;
     rider = (semaphore)SEMAPHORE_INITIALIZER;
     bmtx = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
@@ -155,5 +163,11 @@ int main(int argc, char* argv[]){
     for(int i=0; i<m; i++) pthread_cancel(boat_thr[i]);
     for(int i=0; i<n; i++) pthread_cancel(vis_thr[i]);
     for(int i=0; i<m; i++) pthread_barrier_destroy(&BB[i]);
+    pthread_mutex_destroy(&bmtx);
+    pthread_mutex_destroy(&(boat.mtx));
+    pthread_mutex_destroy(&(rider.mtx));
+    pthread_cond_destroy(&(boat.cv));
+    pthread_cond_destroy(&(rider.cv));
+
     pthread_barrier_destroy(&EOS);
 }
