@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <stdint.h>
+#include <time.h>
 
 #define MMAX 10
 #define NMAX 100
@@ -51,7 +52,6 @@ void V(semaphore *s){
 void *Boat(void *targ){
     int boat_id = *(int *)targ;
     printf("Boat\t%d\tReady\n",boat_id+1);
-    BA[boat_id] = true;
     while(1){
         P(&boat);
         
@@ -61,6 +61,7 @@ void *Boat(void *targ){
         pthread_barrier_init(&BB[boat_id], NULL, 2);
         pthread_barrier_t* bar = &BB[boat_id];
         pthread_mutex_unlock(&bmtx);
+
         V(&rider);
         
         pthread_barrier_wait(bar);
@@ -90,7 +91,6 @@ void *Boat(void *targ){
 void *Visitor(void *targ){
     int vis_id = *(int *)targ;
     time_t vtime, rtime;
-    srand((unsigned int)pthread_self());
     vtime = rand_range(30, 120);
     rtime = rand_range(15, 60);
 
@@ -138,12 +138,14 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
+    printf("--- Welcome to Footanical Barden: %d boats, %d visitors ---\n", m, n);
+
+    srand(time(NULL));
+
     boat = (semaphore)SEMAPHORE_INITIALIZER;
     rider = (semaphore)SEMAPHORE_INITIALIZER;
     bmtx = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
     pthread_barrier_init(&EOS, NULL, 2);
-
-    for(int i=0; i<m; i++) BA[i] = false;
 
     pthread_t boat_thr[MMAX];
     pthread_t vis_thr[NMAX];
@@ -170,4 +172,7 @@ int main(int argc, char* argv[]){
     pthread_cond_destroy(&(rider.cv));
 
     pthread_barrier_destroy(&EOS);
+
+    printf("--- All visitors have left ---\n");
+    return 0;
 }
