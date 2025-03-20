@@ -12,7 +12,7 @@
 #include <list>
 using namespace std;
 
-#define msleep(x) usleep((x)*10000)
+#define msleep(x) usleep((x)*100000)
 
 struct Request{
     int id;
@@ -39,7 +39,8 @@ struct BinarySemaphore {
 
     void wait() {
         pthread_mutex_lock(&cmtx);
-        if(!signaled) pthread_cond_wait(&cv, &cmtx);
+        while(!signaled)
+            pthread_cond_wait(&cv, &cmtx);
         signaled = false;
         pthread_mutex_unlock(&cmtx);
     }
@@ -60,14 +61,14 @@ bool operator<=(const vector<int>&a, const vector<int>&b){
     return true;
 }
 
-void operator+=(std::vector<int>& a, const std::vector<int>& b) {
+void operator+=(vector<int>& a, const vector<int>& b) {
     assert(a.size() == b.size() && "Vectors must have the same size");
     int m = a.size();
     for (int i=0; i<m; i++) 
         a[i] += b[i];
 }
 
-void operator-=(std::vector<int>& a, const std::vector<int>& b) {
+void operator-=(vector<int>& a, const vector<int>& b) {
     assert(a.size() == b.size() && "Vectors must have the same size");
     int m = a.size();
     for (int i=0; i<m; i++) 
@@ -76,6 +77,9 @@ void operator-=(std::vector<int>& a, const std::vector<int>& b) {
 
 vector<int> AVAILABLE;
 vector<vector<int>> NEED, ALLOC;
+#ifdef _DLAVOID
+vector<bool> DEAD;
+#endif
 pthread_barrier_t BOS, REQB;
 vector<pthread_barrier_t> ACK;
 pthread_mutex_t rmtx, pmtx;
@@ -112,6 +116,28 @@ void print_available(int){
     logger(avail);
 }
 
+#ifdef _DLAVOID
+bool isSafe(vector<int> &AVAILABLE, vector<vector<int>> &ALLOC, vector<vector<int>> &NEED){
+    int n = ALLOC.size();
+    vector<int> WORK = AVAILABLE;
+    vector<bool> FINISH = DEAD;
+
+    while(true){
+        bool found = false;
+        for(int i=0; i<n; i++){
+            if(!FINISH[i] && NEED[i] <= WORK){
+                found = true;
+                FINISH[i] = true;
+                WORK += ALLOC[i];
+            }
+        }
+        if(!found) break;
+    }
+
+    return all_of(FINISH.begin(), FINISH.end(), [](bool x){return x;});
+}
+#endif
+
 void* User(void* targ){
     int id = (intptr_t)targ;
     logger("\tThread " + to_string(id) + " born");
@@ -132,11 +158,11 @@ void* User(void* targ){
         if(type == 'Q'){
             pthread_mutex_lock(&rmtx);
             GlobalRequest = Request(id);
-            logger("\tThread " + to_string(id) + " sends resource request: type = RELEASE");
+            // logger("\tThread " + to_string(id) + " sends resource request: type = RELEASE");
             pthread_barrier_wait(&REQB);
             pthread_barrier_wait(&ACK[id]);
             pthread_mutex_unlock(&rmtx);
-            logger("Thread " + to_string(id) + " going to quit");
+            logger("\tThread " + to_string(id) + " going to quit");
             break;
         }
 
@@ -155,10 +181,10 @@ void* User(void* targ){
 
         if(reqType == Request::ADDITIONAL){
             SEM[id].wait();
-            logger("Thread " + to_string(id) + " is granted its last resource request");
+            logger("\tThread " + to_string(id) + " is granted its last resource request");
         }
         else{
-            logger("Thread " + to_string(id) + " is done with its resource release request");
+            logger("\tThread " + to_string(id) + " is done with its resource release request");
         }
     }
     fp.close();
@@ -174,6 +200,9 @@ void *Master(void* targ){
     ALLOC.resize(n, vector<int>(m));
     ACK.resize(n);
     SEM.resize(n, BinarySemaphore());
+#ifdef _DLAVOID
+    DEAD.resize(n, false);
+#endif
     
     for(int i = 0; i < m; i++){
         fp >> AVAILABLE[i];
@@ -205,11 +234,16 @@ void *Master(void* targ){
             for(int i=0; i<m; i++){
                 AVAILABLE[i] += ALLOC[req.id][i];
                 ALLOC[req.id][i] = 0;
-                // What to do with NEED?
+#ifdef _DLAVOID
+                NEED[req.id][i] = 0;
+#endif
             }
 
             users.erase(find(users.begin(), users.end(), req.id));
             logger("Master thread releases resources of thread " + to_string(req.id));
+#ifdef _DLAVOID
+            DEAD[req.id] = true;
+#endif
             print_waiting_threads(Q);
             print_left_threads(users);
             print_available(m);
@@ -219,7 +253,9 @@ void *Master(void* targ){
         else if(req.type == Request::RELEASE){
             AVAILABLE -= req.R;
             ALLOC[req.id] += req.R;
-            // What to do with NEED?
+#ifdef _DLAVOID
+            NEED[req.id] -= req.R;
+#endif
         }
         else{
             for(int i=0; i<m; i++){
@@ -227,7 +263,9 @@ void *Master(void* targ){
                     int r = -req.R[i];
                     AVAILABLE[i] += r;
                     ALLOC[req.id][i] -= r;
-                    // What to do with NEED?
+#ifdef _DLAVOID
+                    NEED[req.id][i] += r;
+#endif
                     req.R[i] = 0;
                 }
             }
@@ -239,14 +277,28 @@ void *Master(void* targ){
         logger("Master thread tries to grant pending requests");
         for(auto it = Q.begin(); it != Q.end();){
             if(it->R <= AVAILABLE){
+#ifdef _DLAVOID
+                vector<int> TMP_AVAILABLE = AVAILABLE;
+                vector<vector<int>> TMP_ALLOC = ALLOC;
+                vector<vector<int>> TMP_NEED = NEED;
+                TMP_AVAILABLE -= it->R;
+                TMP_ALLOC[it->id] += it->R;
+                TMP_NEED[it->id] -= it->R;
+                if(!isSafe(TMP_AVAILABLE, TMP_ALLOC, TMP_NEED)){
+                    logger("    +++ Unsafe to grant request of thread " + to_string(it->id));
+                    ++it;
+                    continue;
+                }
+#endif
                 AVAILABLE -= (it->R);
                 ALLOC[it->id] += (it->R);
+                NEED[it->id] -= (it->R);
                 SEM[it->id].signal();
                 logger("Master thread grants resource request for thread " + to_string(it->id));
                 it = Q.erase(it);
             }
             else {
-                logger("\t+++ Insufficient resources to grant request of thread " + to_string(it->id));
+                logger("    +++ Insufficient resources to grant request of thread " + to_string(it->id));
                 ++it;
             }
         }
