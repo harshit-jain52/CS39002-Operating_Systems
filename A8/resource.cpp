@@ -12,7 +12,11 @@
 #include <list>
 using namespace std;
 
-#define msleep(x) usleep((x)*100000)
+#define MMAX 20
+#define NMAX 100
+#define MMIN 5
+#define NMIN 10
+#define msleep(x) usleep((x)*10000)
 
 struct Request{
     int id;
@@ -39,8 +43,7 @@ struct BinarySemaphore {
 
     void wait() {
         pthread_mutex_lock(&cmtx);
-        while(!signaled)
-            pthread_cond_wait(&cv, &cmtx);
+        while(!signaled) pthread_cond_wait(&cv, &cmtx);
         signaled = false;
         pthread_mutex_unlock(&cmtx);
     }
@@ -146,6 +149,10 @@ void* User(void* targ){
     ostringstream filename;
     filename << "input/thread" << setw(2) << setfill('0') << id << ".txt";
     ifstream fp(filename.str());
+    if(!fp || !fp.is_open()){
+        cerr << "User thread " << id << " : cannot open file" << endl;
+        exit(1);
+    }
 
     for(int i = 0; i < (int)NEED[id].size(); i++){
         fp >> NEED[id][i];
@@ -193,8 +200,18 @@ void* User(void* targ){
 
 void *Master(void* targ){
     ifstream fp("input/system.txt");
+    if(!fp || !fp.is_open()){
+        cerr << "Master thread: cannot open file" << endl;
+        exit(1);
+    }
+
     int m, n;
     fp >> m >> n;
+    if(m < MMIN || m > MMAX || n < NMIN || n > NMAX){
+        cerr << "Range of m: " << MMIN << "-" << MMAX << endl;
+        cerr << "Range of n: " << NMIN << "-" << NMAX << endl;
+        exit(1);
+    }
     AVAILABLE.resize(m);
     NEED.resize(n, vector<int>(m));
     ALLOC.resize(n, vector<int>(m));
@@ -248,7 +265,6 @@ void *Master(void* targ){
             print_left_threads(users);
             print_available(m);
             if(users.size() == 0) break;
-            continue;
         }
         else if(req.type == Request::RELEASE){
             AVAILABLE -= req.R;
@@ -292,7 +308,9 @@ void *Master(void* targ){
 #endif
                 AVAILABLE -= (it->R);
                 ALLOC[it->id] += (it->R);
+#ifdef _DLAVOID
                 NEED[it->id] -= (it->R);
+#endif
                 SEM[it->id].signal();
                 logger("Master thread grants resource request for thread " + to_string(it->id));
                 it = Q.erase(it);
@@ -308,6 +326,17 @@ void *Master(void* targ){
     for(int i=0; i<n;i++){
         pthread_join(user_th[i], NULL);
     }
+
+    pthread_barrier_destroy(&BOS);
+    pthread_barrier_destroy(&REQB);
+    pthread_mutex_destroy(&rmtx);
+    pthread_mutex_destroy(&pmtx);
+    for(int i=0; i<n; i++){
+        pthread_barrier_destroy(&ACK[i]);
+        pthread_mutex_destroy(&SEM[i].cmtx);
+        pthread_cond_destroy(&SEM[i].cv);
+    }
+
     return NULL;
 }
 
