@@ -7,7 +7,6 @@
 #include <inttypes.h>
 #include <unistd.h>
 #include <algorithm>
-#include <queue>
 #include <cassert>
 #include <list>
 using namespace std;
@@ -78,8 +77,7 @@ void operator-=(vector<int>& a, const vector<int>& b) {
         a[i] -= b[i];
 }
 
-vector<int> AVAILABLE;
-vector<vector<int>> NEED, ALLOC;
+vector<vector<int>> NEED;
 #ifdef _DLAVOID
 vector<bool> DEAD;
 #endif
@@ -111,7 +109,7 @@ void print_left_threads(list<int> &users){
     logger(left);
 }
 
-void print_available(int){
+void print_available(vector<int> &AVAILABLE){
     string avail = "Available resources:";
     for(int r: AVAILABLE){
         avail += (" " + to_string(r));
@@ -165,7 +163,6 @@ void* User(void* targ){
         if(type == 'Q'){
             pthread_mutex_lock(&rmtx);
             GlobalRequest = Request(id);
-            // logger("\tThread " + to_string(id) + " sends resource request: type = RELEASE");
             pthread_barrier_wait(&REQB);
             pthread_barrier_wait(&ACK[id]);
             pthread_mutex_unlock(&rmtx);
@@ -173,7 +170,7 @@ void* User(void* targ){
             break;
         }
 
-        vector<int> R(AVAILABLE.size());
+        vector<int> R(NEED[id].size());
         for(int i = 0; i < (int)R.size(); i++){
             fp >> R[i];
         }
@@ -212,9 +209,9 @@ void *Master(void* targ){
         cerr << "Range of n: " << NMIN << "-" << NMAX << endl;
         exit(1);
     }
-    AVAILABLE.resize(m);
+    vector<int> AVAILABLE(m);
+    vector<vector<int>> ALLOC(n, vector<int>(m));
     NEED.resize(n, vector<int>(m));
-    ALLOC.resize(n, vector<int>(m));
     ACK.resize(n);
     SEM.resize(n, BinarySemaphore());
 #ifdef _DLAVOID
@@ -252,7 +249,7 @@ void *Master(void* targ){
                 AVAILABLE[i] += ALLOC[req.id][i];
                 ALLOC[req.id][i] = 0;
 #ifdef _DLAVOID
-                NEED[req.id][i] = 0;
+                NEED[req.id][i] += ALLOC[req.id][i];
 #endif
             }
 
@@ -263,7 +260,7 @@ void *Master(void* targ){
 #endif
             print_waiting_threads(Q);
             print_left_threads(users);
-            print_available(m);
+            print_available(AVAILABLE);
             if(users.size() == 0) break;
         }
         else if(req.type == Request::RELEASE){
