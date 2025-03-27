@@ -72,7 +72,7 @@ struct Process{
     }
 
     int getPageNum(int k){
-        return NUM_PAGES_ESSENTIAL_SEGMENT+k/1024;
+        return NUM_PAGES_ESSENTIAL_SEGMENT+(k>>10);
     }
 
     bool BinarySearch(){
@@ -114,8 +114,8 @@ int main(){
         cerr << "Cannot open file" << endl;
         exit(1);
     }
-    for(__u_short f = 0; f < (MEM_SIZE_MB*1024)/FRAME_SIZE_KB; f++) freeFrames.push(f);
-    for(__u_short f = 0; f < (OS_RESERVE_MB*1024)/FRAME_SIZE_KB; f++) freeFrames.pop();
+    for(__u_short f = 0; f < (MEM_SIZE_MB<<10)/FRAME_SIZE_KB; f++) freeFrames.push(f);
+    for(__u_short f = 0; f < (OS_RESERVE_MB<<10)/FRAME_SIZE_KB; f++) freeFrames.pop();
 
     int n, m;
     fp >> n >> m;
