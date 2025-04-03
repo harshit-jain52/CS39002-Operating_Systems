@@ -153,13 +153,11 @@ struct Process{
             printf("    Fault on Page %4d: Free frame %d found\n", pg, pt.arr[pg].frame_num);
 #endif
             FFLIST.pop_front();
-            pt.SetValid(pg);
         }
         else{
             pad.page_replacements++;
             int q = findReplacement();
             assert(q >= 0);
-            pt.SetReference(q);
 #ifdef VERBOSE
             printf("    Fault on Page %4d: To replace Page %d at Frame %d [history = %d]\n", pg, q, pt.getFrameNum(q), pt.arr[q].history);
 #endif
@@ -218,13 +216,10 @@ struct Process{
 
             replace:
             assert(f >= 0);
-            pt.Update(q);
             pt.arr[q].frame_num = pt.getFrameNum(q);
             FFLIST.emplace_back(pt.arr[q].frame_num, q, pid);
-            pt.arr[pg].history = 0xffff;
 
             pt.arr[pg].frame_num = f;
-            pt.SetValid(pg);
         }
     }
 
@@ -238,6 +233,8 @@ struct Process{
             int pg = GetPage(M);
             if(!pt.GetValid(pg)){
                 pageFault(pg);
+                pt.arr[pg].history = 0xffff;
+                pt.SetValid(pg);
             }
             pad.page_accesses++;
             pt.SetReference(pg);
