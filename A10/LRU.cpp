@@ -195,14 +195,14 @@ struct Process{
             if(f!=-1) goto replace;
             
             // Attempt 3
-            for(auto it = FFLIST.begin(); it != FFLIST.end(); it++){
+            for(auto it = FFLIST.rbegin(); it != FFLIST.rend(); it++){
                 if(it->last_pid == pid){
                     f = it->frame_num;
 #ifdef VERBOSE
                     printf("        Attempt 3: Own page %d found in free frame %d\n", it->page_num, f);
 #endif
                     pad.replace_attempts[2]++;
-                    FFLIST.erase(it);
+                    FFLIST.erase(prev(it.base()));
                     break;
                 }
             }
