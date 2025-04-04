@@ -1,3 +1,5 @@
+TEXT_FILE = search.txt
+
 run: LRU.cpp checkdb
 	g++ -Wall -o runsearch LRU.cpp
 	./runsearch

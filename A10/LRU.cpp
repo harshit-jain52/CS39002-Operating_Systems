@@ -14,8 +14,13 @@ using namespace std;
 #define USERS_MB (MEM_SIZE_MB - OS_RESERVE_MB)
 #define NUM_PAGES_PER_PROC 2048
 #define NUM_PAGES_ESSENTIAL_SEGMENT 10
-#define NFFMIN 1000
-#define NFF ((int)FFLIST.size())
+
+#define NFFMIN 1000 // Minimum no. of free frames
+#define NFF ((int)FFLIST.size()) // No. of Free Frames
+
+float percentage(int a, int b){
+    return a*100.0/b;
+}
 
 struct Frame{
     __u_short frame_num;
@@ -41,7 +46,7 @@ struct Page{
     }
 };
 
-list<Frame>FFLIST;
+list<Frame>FFLIST; // Free Frame List
 
 struct PageTable{
     vector<Page> arr;
@@ -100,6 +105,35 @@ struct PageAccessData{
         page_replacements = 0;
         memset(replace_attempts, 0, sizeof(replace_attempts));
     }
+
+    void operator+=(const PageAccessData& other){
+        page_accesses += other.page_accesses;
+        page_faults += other.page_faults;
+        page_replacements += other.page_replacements;
+        for(int i=0;i<4;i++){
+            replace_attempts[i] += other.replace_attempts[i];
+        }
+    }
+
+    void printSummary(int pid){
+        if(pid < 0) printf("\n    Total     ");
+        else printf("    %-3d       ", pid);
+        printf("%-6d    %-6d(%.2f%%)    %-6d(%.2f%%)    %3d + %3d + %3d + %3d  (%.2f%% + %.2f%% + %.2f%% + %.2f%%)\n",
+            page_accesses,
+            page_faults,
+            percentage(page_faults, page_accesses),
+            page_replacements,
+            percentage(page_replacements, page_accesses),
+            replace_attempts[0],
+            replace_attempts[1],
+            replace_attempts[2],
+            replace_attempts[3],
+            percentage(replace_attempts[0], page_replacements),
+            percentage(replace_attempts[1], page_replacements),
+            percentage(replace_attempts[2], page_replacements),
+            percentage(replace_attempts[3], page_replacements)
+        );
+    }
 };
 
 struct Process{
@@ -110,11 +144,13 @@ struct Process{
     int pid;
     PageAccessData pad;
     
+    // Constructor
     Process(int m){
         keys.resize(m);
         curr=0;
     }
 
+    // Load Essential Pages
     void LoadEssential(){
         for(int i=0;i<NUM_PAGES_ESSENTIAL_SEGMENT;i++){
             pt.arr[i].frame_num = FFLIST.front().frame_num;
@@ -123,6 +159,7 @@ struct Process{
         }
     }
 
+    // Process Exit
     void Exit(){
         for(int i=0;i<NUM_PAGES_PER_PROC;i++){
             if(!pt.GetValid(i)) continue;
@@ -131,10 +168,12 @@ struct Process{
         }
     }
 
+    // Get Page Number
     int GetPage(int k){
         return NUM_PAGES_ESSENTIAL_SEGMENT+(k>>10);
     }
 
+    // Find Replacement (Victim) Page
     int findReplacement(){
         int q = -1;
         for(int i=NUM_PAGES_ESSENTIAL_SEGMENT;i<NUM_PAGES_PER_PROC;i++){
@@ -145,9 +184,11 @@ struct Process{
         return q;
     }
 
+    // Page Fault Handler
     void pageFault(int pg){
         pad.page_faults++;
         if(NFF > NFFMIN){
+            // Free Frame available, no replacement needed
             pt.arr[pg].frame_num = FFLIST.front().frame_num;
 #ifdef VERBOSE
             printf("    Fault on Page %4d: Free frame %d found\n", pg, pt.arr[pg].frame_num);
@@ -155,6 +196,7 @@ struct Process{
             FFLIST.pop_front();
         }
         else{
+            // Page Replacement needed
             pad.page_replacements++;
             int q = findReplacement();
             assert(q >= 0);
@@ -164,7 +206,7 @@ struct Process{
 
             int f = -1;
 
-            // Attempt 1
+            // Attempt 1 - Check if there's a free frame with the same last owner and page number
             for(auto it = FFLIST.begin(); it != FFLIST.end(); it++){
                 if(it->last_pid == pid && it->page_num == pg){
                     f = it->frame_num;
@@ -178,7 +220,7 @@ struct Process{
             }
             if(f!=-1) goto replace;
             
-            // Attempt 2
+            // Attempt 2 - Check if there's a free frame with no owner
             for(auto it = FFLIST.rbegin(); it != FFLIST.rend(); it++){
                 if(it->last_pid == -1){
                     f = it->frame_num;
@@ -192,7 +234,7 @@ struct Process{
             }
             if(f!=-1) goto replace;
             
-            // Attempt 3
+            // Attempt 3 - Check if there's a free frame with the same last owner
             for(auto it = FFLIST.rbegin(); it != FFLIST.rend(); it++){
                 if(it->last_pid == pid){
                     f = it->frame_num;
@@ -206,7 +248,7 @@ struct Process{
             }
             if(f!=-1) goto replace;
             
-            // Attempt 4
+            // Attempt 4 - Pick a random (here, first) free frame
             f = FFLIST.front().frame_num;
 #ifdef VERBOSE
             printf("        Attempt 4: Free frame %d owned by Process %d chosen\n", f, FFLIST.front().last_pid);
@@ -216,6 +258,8 @@ struct Process{
 
             replace:
             assert(f >= 0);
+
+            // Free the frame storing victim page
             pt.arr[q].frame_num = pt.getFrameNum(q);
             FFLIST.emplace_back(pt.arr[q].frame_num, q, pid);
 
@@ -249,11 +293,8 @@ struct Process{
 };
 
 
-queue<int>ready;
+queue<int>ready; // Ready Queue
 
-float percentage(int a, int b){
-    return a*100.0/b;
-}
 
 int main(){
     ifstream fp("search.txt");
@@ -261,8 +302,11 @@ int main(){
         cerr << "Cannot open file" << endl;
         exit(1);
     }
+
+    // Initialize Free Frame List
     for(__u_short f = 0; f < (USERS_MB<<10)/FRAME_SIZE_KB; f++) FFLIST.emplace_back(f);
 
+    // Read Simulation Data
     int n, m;
     fp >> n >> m;
     vector<Process>simData(n, Process(m));
@@ -272,11 +316,13 @@ int main(){
         for(int j=0;j<m;j++) fp >> simData[i].keys[j];
     }
 
+    // Initialize Kernel Data
     for(int i=0;i<n;i++){
         simData[i].LoadEssential();
         ready.push(i);
     }
 
+    // Simulation Loop
     while(!ready.empty()){
         int proc = ready.front();
         ready.pop();
@@ -297,43 +343,9 @@ int main(){
     printf("+++ Page access summary\n");
     printf("    PID     Accesses        Faults         Replacements                        Attempts\n");
     for(int i=0;i<n;i++){
-        printf("    %-3d       %-6d    %-6d(%.2f%%)    %-6d(%.2f%%)    %3d + %3d + %3d + %3d  (%.2f%% + %.2f%% + %.2f%% + %.2f%%)\n",
-            simData[i].pid,
-            simData[i].pad.page_accesses,
-            simData[i].pad.page_faults,
-            percentage(simData[i].pad.page_faults, simData[i].pad.page_accesses),
-            simData[i].pad.page_replacements,
-            percentage(simData[i].pad.page_replacements, simData[i].pad.page_accesses),
-            simData[i].pad.replace_attempts[0],
-            simData[i].pad.replace_attempts[1],
-            simData[i].pad.replace_attempts[2],
-            simData[i].pad.replace_attempts[3],
-            percentage(simData[i].pad.replace_attempts[0], simData[i].pad.page_replacements),
-            percentage(simData[i].pad.replace_attempts[1], simData[i].pad.page_replacements),
-            percentage(simData[i].pad.replace_attempts[2], simData[i].pad.page_replacements),
-            percentage(simData[i].pad.replace_attempts[3], simData[i].pad.page_replacements)
-        );
-        total.page_accesses += simData[i].pad.page_accesses;
-        total.page_faults += simData[i].pad.page_faults;
-        total.page_replacements += simData[i].pad.page_replacements;
-        for(int j=0;j<4;j++){
-            total.replace_attempts[j] += simData[i].pad.replace_attempts[j];
-        }
+        simData[i].pad.printSummary(simData[i].pid);
+        total += simData[i].pad;
     }
 
-    printf("\n    Total     %-6d    %-6d(%.2f%%)    %-6d(%.2f%%)    %3d + %3d + %3d + %3d  (%.2f%% + %.2f%% + %.2f%% + %.2f%%)\n",
-        total.page_accesses,
-        total.page_faults,
-        percentage(total.page_faults, total.page_accesses),
-        total.page_replacements,
-        percentage(total.page_replacements, total.page_accesses),
-        total.replace_attempts[0],
-        total.replace_attempts[1],
-        total.replace_attempts[2],
-        total.replace_attempts[3],
-        percentage(total.replace_attempts[0], total.page_replacements),
-        percentage(total.replace_attempts[1], total.page_replacements),
-        percentage(total.replace_attempts[2], total.page_replacements),
-        percentage(total.replace_attempts[3], total.page_replacements)
-    );
+    total.printSummary(-1);
 }
