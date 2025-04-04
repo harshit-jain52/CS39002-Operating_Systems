@@ -128,10 +128,10 @@ struct PageAccessData{
             replace_attempts[1],
             replace_attempts[2],
             replace_attempts[3],
-            percentage(replace_attempts[0], page_replacements),
-            percentage(replace_attempts[1], page_replacements),
-            percentage(replace_attempts[2], page_replacements),
-            percentage(replace_attempts[3], page_replacements)
+            page_replacements!=0 ? percentage(replace_attempts[0], page_replacements) : 0.0,
+            page_replacements!=0 ? percentage(replace_attempts[1], page_replacements) : 0.0,
+            page_replacements!=0 ? percentage(replace_attempts[2], page_replacements) : 0.0,
+            page_replacements!=0 ? percentage(replace_attempts[3], page_replacements) : 0.0
         );
     }
 };
